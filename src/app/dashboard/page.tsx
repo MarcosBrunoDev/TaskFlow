@@ -185,7 +185,8 @@ export default function DashboardPage() {
             className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 focus:outline-none focus:border-slate-600 text-sm"
           >
             <option value="">Todas las prioridades</option>
-            <option value="HIGH">Alta</option>
+            <option value="URGENT">Urgente</option>
+            <option value="IMPORTANT">Importante</option>
             <option value="MEDIUM">Media</option>
             <option value="LOW">Baja</option>
           </select>

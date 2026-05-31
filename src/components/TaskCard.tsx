@@ -76,13 +76,23 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 
       {/* Footer */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-2 pt-2 border-t border-slate-800">
+        {/* Contacto cliente */}
         {task.person && (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 text-slate-400">
             <User className="w-3 h-3" />
             {task.person.name}
           </span>
         )}
 
+        {/* Último contacto */}
+        {task.lastContactDate && (
+          <span className="flex items-center gap-1 text-slate-400">
+            <Calendar className="w-3 h-3" />
+            {format(new Date(task.lastContactDate), 'dd MMM', { locale: es })}
+          </span>
+        )}
+
+        {/* Asignado del equipo */}
         <span className={cn('flex items-center gap-1 font-medium', task.assignedTo ? 'text-emerald-400' : 'text-slate-600')}>
           {task.assignedTo?.image ? (
             <img src={task.assignedTo.image} alt="" className="w-3.5 h-3.5 rounded-full" />
@@ -103,10 +113,10 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             isDueToday
               ? 'bg-red-500/20 text-red-400 animate-pulse'
               : isOverdue
-              ? 'bg-red-900/30 text-red-500'
-              : daysUntilDue !== null && daysUntilDue <= 2
-              ? 'text-amber-400'
-              : 'text-slate-400'
+                ? 'bg-red-900/30 text-red-500'
+                : daysUntilDue !== null && daysUntilDue <= 2
+                  ? 'text-amber-400'
+                  : 'text-slate-400'
           )}>
             <CalendarClock className="w-3 h-3" />
             {isDueToday ? '¡Hoy!' : isOverdue

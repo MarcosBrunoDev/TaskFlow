@@ -1,0 +1,1 @@
+UPDATE "Task" SET priority = 'URGENT' WHERE priority = 'HIGH';
