@@ -18,18 +18,33 @@ interface TaskModalProps {
 
 export function TaskModal({ task, categories, persons, tags, users, onClose, onSave, onDelete }: TaskModalProps) {
   const [form, setForm] = useState({
-    title: task?.title || '',
-    status: task?.status || 'PENDING',
-    priority: task?.priority || 'MEDIUM',
-    plannerUrl: task?.plannerUrl || '',
-    notes: task?.notes || '',
-    categoryId: task?.categoryId || '',
-    personId: task?.personId || '',
-    assignedToId: task?.assignedToId || '',
+    title: task?.title ?? '',
+    status: task?.status ?? 'PENDING',
+    priority: task?.priority ?? 'MEDIUM',
+    plannerUrl: task?.plannerUrl ?? '',
+    notes: task?.notes ?? '',
+    categoryId: task?.categoryId ?? '',
+    personId: task?.personId ?? '',
+    assignedToId: task?.assignedToId ?? '',
     dueDate: task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
     lastContactDate: task?.lastContactDate ? format(new Date(task.lastContactDate), 'yyyy-MM-dd') : '',
-    tags: task?.tags?.map((t: any) => t.tag.id) || [],
+    tags: task?.tags?.map((t: any) => t.tag.id) ?? [],
   })
+  useEffect(() => {
+  setForm({
+    title: task?.title ?? '',
+    status: task?.status ?? 'PENDING',
+    priority: task?.priority ?? 'MEDIUM',
+    plannerUrl: task?.plannerUrl ?? '',
+    notes: task?.notes ?? '',
+    categoryId: task?.categoryId ?? '',
+    personId: task?.personId ?? '',
+    assignedToId: task?.assignedToId ?? '',
+    dueDate: task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
+    lastContactDate: task?.lastContactDate ? format(new Date(task.lastContactDate), 'yyyy-MM-dd') : '',
+    tags: task?.tags?.map((t: any) => t.tag.id) ?? [],
+  })
+}, [task])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {

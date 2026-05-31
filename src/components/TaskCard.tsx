@@ -75,6 +75,19 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           </span>
         )}
 
+        {/* Asignado a */}
+        <span className={cn(
+          'flex items-center gap-1 font-medium',
+          task.assignedTo ? 'text-emerald-400' : 'text-slate-600'
+        )}>
+          {task.assignedTo?.image ? (
+            <img src={task.assignedTo.image} alt="" className="w-3.5 h-3.5 rounded-full" />
+          ) : (
+            <User className="w-3 h-3" />
+          )}
+          {task.assignedTo ? task.assignedTo.name : 'Sin asignar'}
+        </span>
+
         {/* Fecha de creación */}
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
@@ -88,17 +101,17 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             isDueToday
               ? 'bg-red-500/20 text-red-400 animate-pulse'
               : isOverdue
-              ? 'bg-red-900/30 text-red-500'
-              : daysUntilDue !== null && daysUntilDue <= 2
-              ? 'text-amber-400'
-              : 'text-slate-400'
+                ? 'bg-red-900/30 text-red-500'
+                : daysUntilDue !== null && daysUntilDue <= 2
+                  ? 'text-amber-400'
+                  : 'text-slate-400'
           )}>
             <CalendarClock className="w-3 h-3" />
             {isDueToday
               ? '¡Hoy!'
               : isOverdue
-              ? `Vencida ${format(dueDate, "dd MMM", { locale: es })}`
-              : format(dueDate, "dd MMM", { locale: es })
+                ? `Vencida ${format(dueDate, "dd MMM", { locale: es })}`
+                : format(dueDate, "dd MMM", { locale: es })
             }
           </span>
         )}

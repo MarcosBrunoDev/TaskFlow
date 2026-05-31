@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
       personId: personId || null,
       assignedToId: assignedToId || null,
       createdById: session.user.id,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      lastContactDate: lastContactDate ? new Date(lastContactDate) : null,
+      dueDate: dueDate ? new Date(dueDate + 'T12:00:00') : null,
+      lastContactDate: lastContactDate ? new Date(lastContactDate + 'T12:00:00') : null,
       tags: tags?.length ? {
         create: tags.map((tagId: string) => ({
           tag: { connect: { id: tagId } },
