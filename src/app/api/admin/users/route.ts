@@ -5,10 +5,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || session.user.role === 'PENDING') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
   const users = await prisma.user.findMany({
+    where: { role: { not: 'PENDING' } },
     orderBy: { createdAt: 'desc' },
     select: { id: true, name: true, email: true, image: true, role: true, createdAt: true },
   })

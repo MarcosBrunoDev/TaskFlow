@@ -12,6 +12,7 @@ export function Navbar() {
   const links = [
     { href: '/dashboard', label: 'Tareas' },
     { href: '/dashboard/settings', label: 'Configuración' },
+    { href: '/dashboard/activity', label: 'Actividad' },
     ...(session?.user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Usuarios' }] : []),
   ]
 

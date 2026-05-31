@@ -45,6 +45,7 @@ model User {
   tasks         Task[]    @relation("AssignedTasks")
   createdTasks  Task[]    @relation("CreatedTasks")
   createdAt     DateTime  @default(now())
+  logs    ActivityLog[]
 }
 
 model VerificationToken {
@@ -127,4 +128,15 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  detail    String?
+  taskId    String?
+  taskTitle String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }

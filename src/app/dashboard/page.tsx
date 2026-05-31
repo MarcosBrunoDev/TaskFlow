@@ -56,6 +56,14 @@ export default function DashboardPage() {
     })
   }, [])
 
+  const logActivity = async (action: string, detail: string, taskId?: string, taskTitle?: string) => {
+    await fetch('/api/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, detail, taskId, taskTitle }),
+    })
+  }
+
   const handleSave = async (data: any) => {
     if (selectedTask) {
       await fetch(`/api/tasks/${selectedTask.id}`, {
@@ -63,12 +71,15 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
+      await logActivity('EDIT', `Editó la tarea`, selectedTask.id, selectedTask.title)
     } else {
-      await fetch('/api/tasks', {
+      const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
+      const task = await res.json()
+      await logActivity('CREATE', `Creó la tarea`, task.id, task.title)
     }
     setShowModal(false)
     setSelectedTask(null)
@@ -78,6 +89,7 @@ export default function DashboardPage() {
   const handleDelete = async () => {
     if (!selectedTask) return
     await fetch(`/api/tasks/${selectedTask.id}`, { method: 'DELETE' })
+    await logActivity('DELETE', `Eliminó la tarea`, selectedTask.id, selectedTask.title)
     setShowModal(false)
     setSelectedTask(null)
     fetchTasks()
