@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
-import { Plus, Trash2, Tag, FolderOpen, User, Activity } from 'lucide-react'
+import { Plus, Trash2, Tag, FolderOpen, User, Activity, ChevronUp, ChevronDown } from 'lucide-react'
 
 function Section({ title, icon, items, onAdd, onDelete, fields }: {
   title: string
@@ -80,6 +80,87 @@ function Section({ title, icon, items, onAdd, onDelete, fields }: {
   )
 }
 
+function StatusSection({ statuses, onAdd, onDelete, onReorder }: {
+  statuses: any[]
+  onAdd: (data: any) => Promise<void>
+  onDelete: (id: string) => Promise<void>
+  onReorder: (id: string, direction: 'up' | 'down') => Promise<void>
+}) {
+  const [form, setForm] = useState({ name: '' })
+  const [loading, setLoading] = useState(false)
+
+  const handleAdd = async () => {
+    if (!form.name.trim()) return
+    setLoading(true)
+    await onAdd(form)
+    setForm({ name: '' })
+    setLoading(false)
+  }
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <h2 className="text-white font-semibold flex items-center gap-2 mb-5">
+        <Activity className="w-4 h-4 text-purple-400" />
+        Estados
+        <span className="ml-auto bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded-full">
+          {statuses.length}
+        </span>
+      </h2>
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Ej: En progreso"
+          value={form.name}
+          onChange={e => setForm({ name: e.target.value })}
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm transition-colors"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={loading}
+          className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Agregar
+        </button>
+      </div>
+      <div className="space-y-2">
+        {statuses.length === 0 ? (
+          <p className="text-slate-600 text-sm text-center py-4">No hay estados todavía</p>
+        ) : (
+          statuses.map((status: any, index: number) => (
+            <div key={status.id} className="flex items-center justify-between bg-slate-800 rounded-xl px-4 py-2.5">
+              <span className="text-white text-sm">{status.name}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onReorder(status.id, 'up')}
+                  disabled={index === 0}
+                  className="text-slate-500 hover:text-white disabled:opacity-20 transition-colors p-1"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onReorder(status.id, 'down')}
+                  disabled={index === statuses.length - 1}
+                  className="text-slate-500 hover:text-white disabled:opacity-20 transition-colors p-1"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onDelete(status.id)}
+                  className="text-slate-600 hover:text-red-400 transition-colors ml-1"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const [categories, setCategories] = useState<any[]>([])
@@ -107,6 +188,29 @@ export default function SettingsPage() {
 
   const deleteItem = async (endpoint: string, id: string) => {
     await fetch(`/api/${endpoint}/${id}`, { method: 'DELETE' })
+    fetchAll()
+  }
+
+  const reorderStatus = async (id: string, direction: 'up' | 'down') => {
+    const index = statuses.findIndex(s => s.id === id)
+    const swapIndex = direction === 'up' ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= statuses.length) return
+
+    const current = statuses[index]
+    const swap = statuses[swapIndex]
+
+    await Promise.all([
+      fetch(`/api/statuses/${current.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: swap.order }),
+      }),
+      fetch(`/api/statuses/${swap.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: current.order }),
+      }),
+    ])
     fetchAll()
   }
 
@@ -146,13 +250,11 @@ export default function SettingsPage() {
             onDelete={(id) => deleteItem('tags', id)}
             fields={[{ key: 'name', label: 'Nombre', placeholder: 'Ej: wordpress' }]}
           />
-          <Section
-            title="Estados"
-            icon={<Activity className="w-4 h-4 text-purple-400" />}
-            items={statuses}
-            onAdd={async (data) => { await fetch('/api/statuses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchAll() }}
+          <StatusSection
+            statuses={statuses}
+            onAdd={async (data) => { await fetch('/api/statuses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, order: statuses.length }) }); fetchAll() }}
             onDelete={(id) => deleteItem('statuses', id)}
-            fields={[{ key: 'name', label: 'Nombre', placeholder: 'Ej: En progreso' }]}
+            onReorder={reorderStatus}
           />
         </div>
       </div>
