@@ -1,8 +1,8 @@
 'use client'
 
-import { format } from 'date-fns'
+import { format, isToday, isPast, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ExternalLink, Calendar, User, Clock } from 'lucide-react'
+import { ExternalLink, Calendar, User, Clock, CalendarClock } from 'lucide-react'
 import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/utils'
 
 interface TaskCardProps {
@@ -11,16 +11,24 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
+  const dueDate = task.dueDate ? new Date(task.dueDate) : null
+  const isDueToday = dueDate ? isToday(dueDate) : false
+  const isOverdue = dueDate ? isPast(dueDate) && !isToday(dueDate) && task.status !== 'DONE' : false
+  const daysUntilDue = dueDate ? differenceInDays(dueDate, new Date()) : null
+
   return (
     <div
       onClick={onClick}
-      className="bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-slate-900/50"
+      className={cn(
+        'bg-slate-900 border rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-slate-900/50',
+        isDueToday ? 'border-red-500/50 hover:border-red-400' : 'border-slate-800 hover:border-slate-600'
+      )}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <h3 className="text-white font-medium text-sm leading-snug flex-1">{task.title}</h3>
         {task.plannerUrl && (
-            <a
+          <a
             href={task.plannerUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -59,22 +67,45 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       )}
 
       {/* Footer */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-2 pt-2 border-t border-slate-800">
         {task.person && (
           <span className="flex items-center gap-1">
             <User className="w-3 h-3" />
             {task.person.name}
           </span>
         )}
-        {task.dueDate && (
-          <span className="flex items-center gap-1 text-amber-500">
-            <Calendar className="w-3 h-3" />
-            {format(new Date(task.dueDate), 'dd MMM', { locale: es })}
+
+        {/* Fecha de creación */}
+        <span className="flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          {format(new Date(task.createdAt), "dd MMM", { locale: es })}
+        </span>
+
+        {/* Fecha límite */}
+        {dueDate && (
+          <span className={cn(
+            'flex items-center gap-1 font-medium rounded-full px-2 py-0.5',
+            isDueToday
+              ? 'bg-red-500/20 text-red-400 animate-pulse'
+              : isOverdue
+              ? 'bg-red-900/30 text-red-500'
+              : daysUntilDue !== null && daysUntilDue <= 2
+              ? 'text-amber-400'
+              : 'text-slate-400'
+          )}>
+            <CalendarClock className="w-3 h-3" />
+            {isDueToday
+              ? '¡Hoy!'
+              : isOverdue
+              ? `Vencida ${format(dueDate, "dd MMM", { locale: es })}`
+              : format(dueDate, "dd MMM", { locale: es })
+            }
           </span>
         )}
+
         {task.lastContactDate && (
           <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
+            <Calendar className="w-3 h-3" />
             {format(new Date(task.lastContactDate), 'dd MMM', { locale: es })}
           </span>
         )}
