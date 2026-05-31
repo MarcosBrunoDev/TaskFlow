@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Activity } from 'lucide-react'
 
 const ACTION_CONFIG: Record<string, { label: string, icon: React.ReactNode, color: string }> = {
   CREATE: { label: 'Creó', icon: <Plus className="w-3.5 h-3.5" />, color: 'bg-emerald-500/10 text-emerald-400' },
-  EDIT:   { label: 'Editó', icon: <Pencil className="w-3.5 h-3.5" />, color: 'bg-blue-500/10 text-blue-400' },
+  EDIT: { label: 'Editó', icon: <Pencil className="w-3.5 h-3.5" />, color: 'bg-blue-500/10 text-blue-400' },
   DELETE: { label: 'Eliminó', icon: <Trash2 className="w-3.5 h-3.5" />, color: 'bg-red-500/10 text-red-400' },
 }
 
@@ -78,6 +78,9 @@ export default function ActivityPage() {
                       )}
                     </div>
                     <p className="text-slate-500 text-xs mt-0.5">
+                      {log.detail && (
+                        <p className="text-slate-500 text-xs mt-0.5 italic">{log.detail}</p>
+                      )}
                       {format(new Date(log.createdAt), "d 'de' MMM yyyy 'a las' HH:mm", { locale: es })}
                     </p>
                   </div>

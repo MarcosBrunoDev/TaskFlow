@@ -5,9 +5,10 @@ import { Plus, Search, Filter } from 'lucide-react'
 import { Navbar } from '@/components/Navbar'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
-import { cn, STATUS_LABELS } from '@/lib/utils'
+import { cn, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
+import { format } from 'date-fns'
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
@@ -71,7 +72,31 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      await logActivity('EDIT', `Editó la tarea`, selectedTask.id, selectedTask.title)
+
+      // Detectar qué cambió
+      const changes: string[] = []
+      if (data.status !== selectedTask.status) changes.push(`estado → ${STATUS_LABELS[data.status]}`)
+      if (data.priority !== selectedTask.priority) changes.push(`prioridad → ${PRIORITY_LABELS[data.priority]}`)
+      if (data.title !== selectedTask.title) changes.push(`título modificado`)
+      if (data.assignedToId !== selectedTask.assignedToId) {
+        const user = users.find((u: any) => u.id === data.assignedToId)
+        changes.push(`asignado a ${user?.name || 'nadie'}`)
+      }
+      if (data.categoryId !== selectedTask.categoryId) {
+        const cat = categories.find((c: any) => c.id === data.categoryId)
+        changes.push(`categoría → ${cat?.name || 'ninguna'}`)
+      }
+      if (data.dueDate !== (selectedTask.dueDate ? format(new Date(selectedTask.dueDate), 'yyyy-MM-dd') : '')) {
+        changes.push(`fecha límite → ${data.dueDate || 'sin fecha'}`)
+      }
+      if (data.notes !== selectedTask.notes) changes.push(`notas modificadas`)
+
+      await logActivity(
+        'EDIT',
+        changes.length > 0 ? changes.join(', ') : 'sin cambios detectados',
+        selectedTask.id,
+        selectedTask.title
+      )
     } else {
       const res = await fetch('/api/tasks', {
         method: 'POST',
