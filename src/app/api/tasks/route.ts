@@ -10,17 +10,18 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const status = searchParams.get('status')
+  const statusId = searchParams.get('statusId')
   const categoryId = searchParams.get('categoryId')
   const priority = searchParams.get('priority')
 
   const tasks = await prisma.task.findMany({
     where: {
-      ...(status && { status: status as any }),
+      ...(statusId && { statusId }),
       ...(categoryId && { categoryId }),
       ...(priority && { priority: priority as any }),
     },
     include: {
+      status: true,
       category: true,
       person: true,
       assignedTo: { select: { id: true, name: true, email: true, image: true } },
@@ -40,12 +41,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, status, priority, plannerUrl, notes, categoryId, personId, assignedToId, dueDate, lastContactDate, tags } = body
+  const { title, statusId, priority, plannerUrl, notes, categoryId, personId, assignedToId, dueDate, lastContactDate, tags } = body
 
   const task = await prisma.task.create({
     data: {
       title,
-      status: status || 'PENDING',
+      statusId: statusId || null,
       priority: priority || 'MEDIUM',
       plannerUrl: plannerUrl || null,
       notes: notes || null,
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
       } : undefined,
     },
     include: {
+      status: true,
       category: true,
       person: true,
       assignedTo: { select: { id: true, name: true, email: true, image: true } },

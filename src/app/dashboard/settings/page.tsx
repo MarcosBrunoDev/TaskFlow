@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
-import { Plus, Trash2, Tag, FolderOpen, User } from 'lucide-react'
+import { Plus, Trash2, Tag, FolderOpen, User, Activity } from 'lucide-react'
 
 function Section({ title, icon, items, onAdd, onDelete, fields }: {
   title: string
@@ -34,8 +34,6 @@ function Section({ title, icon, items, onAdd, onDelete, fields }: {
           {items.length}
         </span>
       </h2>
-
-      {/* Form */}
       <div className="flex gap-2 mb-4">
         {fields.map(f => (
           <input
@@ -57,8 +55,6 @@ function Section({ title, icon, items, onAdd, onDelete, fields }: {
           Agregar
         </button>
       </div>
-
-      {/* List */}
       <div className="space-y-2">
         {items.length === 0 ? (
           <p className="text-slate-600 text-sm text-center py-4">No hay {title.toLowerCase()} todavía</p>
@@ -89,49 +85,25 @@ export default function SettingsPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [persons, setPersons] = useState<any[]>([])
   const [tags, setTags] = useState<any[]>([])
+  const [statuses, setStatuses] = useState<any[]>([])
 
   if (status === 'unauthenticated') redirect('/login')
   if (session?.user.role === 'PENDING') redirect('/pending')
 
   const fetchAll = async () => {
-    const [cats, pers, tgs] = await Promise.all([
+    const [cats, pers, tgs, sts] = await Promise.all([
       fetch('/api/categories').then(r => r.json()),
       fetch('/api/persons').then(r => r.json()),
       fetch('/api/tags').then(r => r.json()),
+      fetch('/api/statuses').then(r => r.json()),
     ])
     setCategories(Array.isArray(cats) ? cats : [])
     setPersons(Array.isArray(pers) ? pers : [])
     setTags(Array.isArray(tgs) ? tgs : [])
+    setStatuses(Array.isArray(sts) ? sts : [])
   }
 
   useEffect(() => { fetchAll() }, [])
-
-  const addCategory = async (data: any) => {
-    await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
-    fetchAll()
-  }
-
-  const addPerson = async (data: any) => {
-    await fetch('/api/persons', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
-    fetchAll()
-  }
-
-  const addTag = async (data: any) => {
-    await fetch('/api/tags', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
-    fetchAll()
-  }
 
   const deleteItem = async (endpoint: string, id: string) => {
     await fetch(`/api/${endpoint}/${id}`, { method: 'DELETE' })
@@ -144,38 +116,43 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white">Configuración</h1>
-          <p className="text-slate-400 text-sm mt-0.5">Administrá categorías, contactos y tags</p>
+          <p className="text-slate-400 text-sm mt-0.5">Administrá categorías, contactos, tags y estados</p>
         </div>
-
         <div className="space-y-6">
           <Section
             title="Categorías"
             icon={<FolderOpen className="w-4 h-4 text-blue-400" />}
             items={categories}
-            onAdd={addCategory}
+            onAdd={async (data) => { await fetch('/api/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchAll() }}
             onDelete={(id) => deleteItem('categories', id)}
             fields={[{ key: 'name', label: 'Nombre', placeholder: 'Ej: Pixels pendientes' }]}
           />
-
           <Section
             title="Contactos"
             icon={<User className="w-4 h-4 text-emerald-400" />}
             items={persons}
-            onAdd={addPerson}
+            onAdd={async (data) => { await fetch('/api/persons', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchAll() }}
             onDelete={(id) => deleteItem('persons', id)}
             fields={[
               { key: 'name', label: 'Nombre', placeholder: 'Nombre' },
               { key: 'role', label: 'Rol', placeholder: 'Rol (opcional)' },
             ]}
           />
-
           <Section
             title="Tags"
             icon={<Tag className="w-4 h-4 text-amber-400" />}
             items={tags}
-            onAdd={addTag}
+            onAdd={async (data) => { await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchAll() }}
             onDelete={(id) => deleteItem('tags', id)}
             fields={[{ key: 'name', label: 'Nombre', placeholder: 'Ej: wordpress' }]}
+          />
+          <Section
+            title="Estados"
+            icon={<Activity className="w-4 h-4 text-purple-400" />}
+            items={statuses}
+            onAdd={async (data) => { await fetch('/api/statuses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); fetchAll() }}
+            onDelete={(id) => deleteItem('statuses', id)}
+            fields={[{ key: 'name', label: 'Nombre', placeholder: 'Ej: En progreso' }]}
           />
         </div>
       </div>

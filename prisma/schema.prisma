@@ -88,7 +88,8 @@ model Tag {
 model Task {
   id              String     @id @default(cuid())
   title           String
-  status          TaskStatus @default(PENDING)
+  statusId        String?
+  status          Status?    @relation(fields: [statusId], references: [id])
   priority        Priority   @default(MEDIUM)
   plannerUrl      String?    @db.Text
   notes           String?    @db.Text
@@ -116,14 +117,6 @@ model TaskTag {
   @@id([taskId, tagId])
 }
 
-enum TaskStatus {
-  PENDING
-  IN_PROGRESS
-  WAITING_FEEDBACK
-  NEEDS_ACCESS
-  DONE
-}
-
 enum Priority {
   LOW
   MEDIUM
@@ -139,4 +132,12 @@ model ActivityLog {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Status {
+  id    String @id @default(cuid())
+  name  String
+  color String?
+  order Int    @default(0)
+  tasks Task[]
 }

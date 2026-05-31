@@ -10,15 +10,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = await req.json()
-  const { title, status, priority, plannerUrl, notes, categoryId, personId, assignedToId, dueDate, lastContactDate, tags } = body
-
-  const completedAt = status === 'DONE' ? new Date() : status ? null : undefined
+  const { title, statusId, priority, plannerUrl, notes, categoryId, personId, assignedToId, dueDate, lastContactDate, tags } = body
 
   const task = await prisma.task.update({
     where: { id: params.id },
     data: {
       ...(title !== undefined && { title }),
-      ...(status !== undefined && { status }),
+      ...(statusId !== undefined && { statusId: statusId || null }),
       ...(priority !== undefined && { priority }),
       ...(plannerUrl !== undefined && { plannerUrl: plannerUrl || null }),
       ...(notes !== undefined && { notes: notes || null }),
@@ -27,7 +25,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ...(assignedToId !== undefined && { assignedToId: assignedToId || null }),
       ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate + 'T12:00:00') : null }),
       ...(lastContactDate !== undefined && { lastContactDate: lastContactDate ? new Date(lastContactDate + 'T12:00:00') : null }),
-      ...(completedAt !== undefined && { completedAt }),
       ...(tags !== undefined && {
         tags: {
           deleteMany: {},
@@ -38,6 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }),
     },
     include: {
+      status: true,
       category: true,
       person: true,
       assignedTo: { select: { id: true, name: true, email: true, image: true } },
@@ -53,7 +51,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!session || session.user.role === 'PENDING') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
-
   await prisma.task.delete({ where: { id: params.id } })
   return NextResponse.json({ ok: true })
 }

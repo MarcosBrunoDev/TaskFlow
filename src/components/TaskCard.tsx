@@ -3,7 +3,7 @@
 import { format, isToday, isPast, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ExternalLink, Calendar, User, Clock, CalendarClock } from 'lucide-react'
-import { cn, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/utils'
+import { cn, PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/utils'
 
 interface TaskCardProps {
   task: any
@@ -42,9 +42,17 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 
       {/* Badges */}
       <div className="flex flex-wrap gap-2 mb-3">
-        <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[task.status])}>
-          {STATUS_LABELS[task.status]}
-        </span>
+        {task.status && (
+          <span
+            className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={task.status.color
+              ? { backgroundColor: task.status.color + '22', color: task.status.color }
+              : { backgroundColor: '#1e293b', color: '#94a3b8' }
+            }
+          >
+            {task.status.name}
+          </span>
+        )}
         <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', PRIORITY_COLORS[task.priority])}>
           {PRIORITY_LABELS[task.priority]}
         </span>
@@ -75,11 +83,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           </span>
         )}
 
-        {/* Asignado a */}
-        <span className={cn(
-          'flex items-center gap-1 font-medium',
-          task.assignedTo ? 'text-emerald-400' : 'text-slate-600'
-        )}>
+        <span className={cn('flex items-center gap-1 font-medium', task.assignedTo ? 'text-emerald-400' : 'text-slate-600')}>
           {task.assignedTo?.image ? (
             <img src={task.assignedTo.image} alt="" className="w-3.5 h-3.5 rounded-full" />
           ) : (
@@ -88,30 +92,26 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           {task.assignedTo ? task.assignedTo.name : 'Sin asignar'}
         </span>
 
-        {/* Fecha de creación */}
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {format(new Date(task.createdAt), "dd MMM", { locale: es })}
         </span>
 
-        {/* Fecha límite */}
         {dueDate && (
           <span className={cn(
             'flex items-center gap-1 font-medium rounded-full px-2 py-0.5',
             isDueToday
               ? 'bg-red-500/20 text-red-400 animate-pulse'
               : isOverdue
-                ? 'bg-red-900/30 text-red-500'
-                : daysUntilDue !== null && daysUntilDue <= 2
-                  ? 'text-amber-400'
-                  : 'text-slate-400'
+              ? 'bg-red-900/30 text-red-500'
+              : daysUntilDue !== null && daysUntilDue <= 2
+              ? 'text-amber-400'
+              : 'text-slate-400'
           )}>
             <CalendarClock className="w-3 h-3" />
-            {isDueToday
-              ? '¡Hoy!'
-              : isOverdue
-                ? `Vencida ${format(dueDate, "dd MMM", { locale: es })}`
-                : format(dueDate, "dd MMM", { locale: es })
+            {isDueToday ? '¡Hoy!' : isOverdue
+              ? `Vencida ${format(dueDate, "dd MMM", { locale: es })}`
+              : format(dueDate, "dd MMM", { locale: es })
             }
           </span>
         )}

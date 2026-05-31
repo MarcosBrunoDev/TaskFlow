@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { Navbar } from '@/components/Navbar'
 import { TaskCard } from '@/components/TaskCard'
 import { TaskModal } from '@/components/TaskModal'
-import { cn, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/utils'
+import { PRIORITY_LABELS } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [persons, setPersons] = useState<any[]>([])
   const [tags, setTags] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
+  const [statuses, setStatuses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -30,18 +31,16 @@ export default function DashboardPage() {
 
   const fetchTasks = useCallback(async () => {
     const params = new URLSearchParams()
-    if (filterStatus) params.set('status', filterStatus)
+    if (filterStatus) params.set('statusId', filterStatus)
     if (filterCategory) params.set('categoryId', filterCategory)
     if (filterPriority) params.set('priority', filterPriority)
     const res = await fetch(`/api/tasks?${params}`)
     const data = await res.json()
-    setTasks(data)
+    setTasks(Array.isArray(data) ? data : [])
     setLoading(false)
   }, [filterStatus, filterCategory, filterPriority])
 
-  useEffect(() => {
-    fetchTasks()
-  }, [fetchTasks])
+  useEffect(() => { fetchTasks() }, [fetchTasks])
 
   useEffect(() => {
     Promise.all([
@@ -49,11 +48,13 @@ export default function DashboardPage() {
       fetch('/api/persons').then(r => r.json()),
       fetch('/api/tags').then(r => r.json()),
       fetch('/api/admin/users').then(r => r.json()),
-    ]).then(([cats, pers, tgs, usrs]) => {
+      fetch('/api/statuses').then(r => r.json()),
+    ]).then(([cats, pers, tgs, usrs, sts]) => {
       setCategories(Array.isArray(cats) ? cats : [])
       setPersons(Array.isArray(pers) ? pers : [])
       setTags(Array.isArray(tgs) ? tgs : [])
       setUsers(Array.isArray(usrs) ? usrs : [])
+      setStatuses(Array.isArray(sts) ? sts : [])
     })
   }, [])
 
@@ -72,10 +73,11 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-
-      // Detectar qué cambió
       const changes: string[] = []
-      if (data.status !== selectedTask.status) changes.push(`estado → ${STATUS_LABELS[data.status]}`)
+      if (data.statusId !== selectedTask.statusId) {
+        const st = statuses.find((s: any) => s.id === data.statusId)
+        changes.push(`estado → ${st?.name || 'ninguno'}`)
+      }
       if (data.priority !== selectedTask.priority) changes.push(`prioridad → ${PRIORITY_LABELS[data.priority]}`)
       if (data.title !== selectedTask.title) changes.push(`título modificado`)
       if (data.assignedToId !== selectedTask.assignedToId) {
@@ -90,13 +92,7 @@ export default function DashboardPage() {
         changes.push(`fecha límite → ${data.dueDate || 'sin fecha'}`)
       }
       if (data.notes !== selectedTask.notes) changes.push(`notas modificadas`)
-
-      await logActivity(
-        'EDIT',
-        changes.length > 0 ? changes.join(', ') : 'sin cambios detectados',
-        selectedTask.id,
-        selectedTask.title
-      )
+      await logActivity('EDIT', changes.length > 0 ? changes.join(', ') : 'sin cambios detectados', selectedTask.id, selectedTask.title)
     } else {
       const res = await fetch('/api/tasks', {
         method: 'POST',
@@ -104,7 +100,7 @@ export default function DashboardPage() {
         body: JSON.stringify(data),
       })
       const task = await res.json()
-      await logActivity('CREATE', `Creó la tarea`, task.id, task.title)
+      await logActivity('CREATE', 'Creó la tarea', task.id, task.title)
     }
     setShowModal(false)
     setSelectedTask(null)
@@ -114,7 +110,7 @@ export default function DashboardPage() {
   const handleDelete = async () => {
     if (!selectedTask) return
     await fetch(`/api/tasks/${selectedTask.id}`, { method: 'DELETE' })
-    await logActivity('DELETE', `Eliminó la tarea`, selectedTask.id, selectedTask.title)
+    await logActivity('DELETE', 'Eliminó la tarea', selectedTask.id, selectedTask.title)
     setShowModal(false)
     setSelectedTask(null)
     fetchTasks()
@@ -135,7 +131,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950">
       <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -164,18 +159,16 @@ export default function DashboardPage() {
               className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-slate-600 text-sm"
             />
           </div>
-
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
             className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 focus:outline-none focus:border-slate-600 text-sm"
           >
             <option value="">Todos los estados</option>
-            {Object.entries(STATUS_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+            {statuses.map((s: any) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
-
           <select
             value={filterCategory}
             onChange={e => setFilterCategory(e.target.value)}
@@ -186,7 +179,6 @@ export default function DashboardPage() {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
-
           <select
             value={filterPriority}
             onChange={e => setFilterPriority(e.target.value)}
@@ -199,7 +191,7 @@ export default function DashboardPage() {
           </select>
         </div>
 
-        {/* Tareas agrupadas por categoría */}
+        {/* Tareas */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -240,6 +232,7 @@ export default function DashboardPage() {
           persons={persons}
           tags={tags}
           users={users}
+          statuses={statuses}
           onClose={() => { setShowModal(false); setSelectedTask(null) }}
           onSave={handleSave}
           onDelete={selectedTask ? handleDelete : undefined}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, ExternalLink, Trash2 } from 'lucide-react'
-import { cn, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/utils'
+import { PRIORITY_LABELS } from '@/lib/utils'
 import { format } from 'date-fns'
 
 interface TaskModalProps {
@@ -11,15 +11,16 @@ interface TaskModalProps {
   persons: any[]
   tags: any[]
   users: any[]
+  statuses: any[]
   onClose: () => void
   onSave: (data: any) => Promise<void>
   onDelete?: () => Promise<void>
 }
 
-export function TaskModal({ task, categories, persons, tags, users, onClose, onSave, onDelete }: TaskModalProps) {
+export function TaskModal({ task, categories, persons, tags, users, statuses, onClose, onSave, onDelete }: TaskModalProps) {
   const [form, setForm] = useState({
     title: task?.title ?? '',
-    status: task?.status ?? 'PENDING',
+    statusId: task?.statusId ?? '',
     priority: task?.priority ?? 'MEDIUM',
     plannerUrl: task?.plannerUrl ?? '',
     notes: task?.notes ?? '',
@@ -30,22 +31,23 @@ export function TaskModal({ task, categories, persons, tags, users, onClose, onS
     lastContactDate: task?.lastContactDate ? format(new Date(task.lastContactDate), 'yyyy-MM-dd') : '',
     tags: task?.tags?.map((t: any) => t.tag.id) ?? [],
   })
-  useEffect(() => {
-  setForm({
-    title: task?.title ?? '',
-    status: task?.status ?? 'PENDING',
-    priority: task?.priority ?? 'MEDIUM',
-    plannerUrl: task?.plannerUrl ?? '',
-    notes: task?.notes ?? '',
-    categoryId: task?.categoryId ?? '',
-    personId: task?.personId ?? '',
-    assignedToId: task?.assignedToId ?? '',
-    dueDate: task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
-    lastContactDate: task?.lastContactDate ? format(new Date(task.lastContactDate), 'yyyy-MM-dd') : '',
-    tags: task?.tags?.map((t: any) => t.tag.id) ?? [],
-  })
-}, [task])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setForm({
+      title: task?.title ?? '',
+      statusId: task?.statusId ?? '',
+      priority: task?.priority ?? 'MEDIUM',
+      plannerUrl: task?.plannerUrl ?? '',
+      notes: task?.notes ?? '',
+      categoryId: task?.categoryId ?? '',
+      personId: task?.personId ?? '',
+      assignedToId: task?.assignedToId ?? '',
+      dueDate: task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
+      lastContactDate: task?.lastContactDate ? format(new Date(task.lastContactDate), 'yyyy-MM-dd') : '',
+      tags: task?.tags?.map((t: any) => t.tag.id) ?? [],
+    })
+  }, [task])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -56,7 +58,15 @@ export function TaskModal({ task, categories, persons, tags, users, onClose, onS
   const handleSubmit = async () => {
     if (!form.title.trim()) return
     setLoading(true)
-    await onSave(form)
+    await onSave({
+      ...form,
+      statusId: form.statusId || null,
+      categoryId: form.categoryId || null,
+      personId: form.personId || null,
+      assignedToId: form.assignedToId || null,
+      dueDate: form.dueDate || null,
+      lastContactDate: form.lastContactDate || null,
+    })
     setLoading(false)
   }
 
@@ -100,12 +110,13 @@ export function TaskModal({ task, categories, persons, tags, users, onClose, onS
             <div>
               <label className="block text-slate-300 text-sm font-medium mb-1.5">Estado</label>
               <select
-                value={form.status}
-                onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                value={form.statusId}
+                onChange={e => setForm(f => ({ ...f, statusId: e.target.value }))}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
               >
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                <option value="">Sin estado</option>
+                {statuses.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
@@ -219,12 +230,11 @@ export function TaskModal({ task, categories, persons, tags, users, onClose, onS
                   <button
                     key={tag.id}
                     onClick={() => toggleTag(tag.id)}
-                    className={cn(
-                      'text-xs px-3 py-1 rounded-full border transition-colors',
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       form.tags.includes(tag.id)
                         ? 'bg-blue-600 border-blue-500 text-white'
                         : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
-                    )}
+                    }`}
                   >
                     #{tag.name}
                   </button>
@@ -250,20 +260,14 @@ export function TaskModal({ task, categories, persons, tags, users, onClose, onS
         <div className="flex items-center justify-between p-6 border-t border-slate-800">
           <div>
             {task && onDelete && (
-              <button
-                onClick={onDelete}
-                className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm transition-colors"
-              >
+              <button onClick={onDelete} className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm transition-colors">
                 <Trash2 className="w-4 h-4" />
                 Eliminar
               </button>
             )}
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
-            >
+            <button onClick={onClose} className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors">
               Cancelar
             </button>
             <button
