@@ -10,6 +10,47 @@ import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
 
+function CategoryAccordion({ category, tasks, onTaskClick }: {
+  category: string
+  tasks: any[]
+  onTaskClick: (task: any) => void
+}) {
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div className="border border-slate-800 rounded-2xl overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-slate-900 hover:bg-slate-800/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-slate-300 font-semibold text-sm">{category}</span>
+          <span className="bg-slate-800 text-slate-500 text-xs px-2 py-0.5 rounded-full">
+            {tasks.length}
+          </span>
+        </div>
+        <svg
+          className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="p-3 bg-slate-950 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {tasks.map((task: any) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onTaskClick(task)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const [tasks, setTasks] = useState<any[]>([])
@@ -202,25 +243,14 @@ export default function DashboardPage() {
             <p className="text-slate-500">No hay tareas que coincidan con los filtros</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-3">
             {Object.entries(grouped).map(([category, categoryTasks]: any) => (
-              <div key={category}>
-                <h2 className="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <span>{category}</span>
-                  <span className="bg-slate-800 text-slate-500 text-xs px-2 py-0.5 rounded-full">
-                    {categoryTasks.length}
-                  </span>
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {categoryTasks.map((task: any) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onClick={() => { setSelectedTask(task); setShowModal(true) }}
-                    />
-                  ))}
-                </div>
-              </div>
+              <CategoryAccordion
+                key={category}
+                category={category}
+                tasks={categoryTasks}
+                onTaskClick={(task) => { setSelectedTask(task); setShowModal(true) }}
+              />
             ))}
           </div>
         )}
